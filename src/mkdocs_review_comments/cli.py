@@ -20,7 +20,7 @@ import os
 import sys
 from pathlib import Path
 
-from .core import DEFAULT_LOG_PAGE, DEFAULT_TAG, Grammar, SourceFile, Thread, index_by_id, next_number
+from .core import DEFAULT_LOG_PAGE, DEFAULT_TAG, Comment, Grammar, SourceFile, Thread, clean_text, index_by_id, next_number
 
 
 class Site:
@@ -85,25 +85,21 @@ def cmd_check(site: Site, args) -> None:
 
 
 def cmd_reply(site: Site, args) -> None:
-    from .core import Comment
-
     threads = site.threads()
     t = site.find(args.id)
     initials = args.initials.upper()
     cid = f"{initials}-{next_number(threads, initials)}"
-    c = Comment(id=cid, author=args.by, date=args.date, text=args.text, line_no=0, indent=t.root.indent, re=args.id)
+    c = Comment(id=cid, author=clean_text(args.by), date=args.date, text=clean_text(args.text), line_no=0, indent=t.root.indent, re=args.id)
     src = site.source(t.page)
     src.write(site.grammar.append_to_thread(src.text, t, site.grammar.format_line(c)))
     print(f"{cid} added to {t.page}:{t.last_line + 1}")
 
 
 def cmd_resolve(site: Site, args) -> None:
-    from .core import Comment
-
     t = site.find(args.id)
     if t.is_resolved:
         sys.exit(f"{t.id} is already resolved")
-    c = Comment(id=t.id, author=args.by, date=args.date, text=args.text, line_no=0, indent=t.root.indent, resolved=True)
+    c = Comment(id=t.id, author=clean_text(args.by), date=args.date, text=clean_text(args.text), line_no=0, indent=t.root.indent, resolved=True)
     src = site.source(t.page)
     src.write(site.grammar.append_to_thread(src.text, t, site.grammar.format_line(c)))
     print(f"{t.id} resolved in {t.page}")
