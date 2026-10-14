@@ -274,6 +274,9 @@ class Grammar:
             last -= 1
         insert_at = last + 1
         prev_is_comment = last >= 0 and last > start and self.parse_line(lines[last], 0) is not None
+        new = self.parse_line(line, 0)
+        if prev_is_comment and new is not None and (new.is_reply or new.resolved):
+            prev_is_comment = False  # a reply or resolution right under another thread would be read as part of it
         directly_under_heading = last == start and anchor != ""
         block = [line] if directly_under_heading or last < 0 or prev_is_comment else ["", line]
         if end < len(lines) and insert_at == end:

@@ -195,3 +195,15 @@ def test_unusual_separators_are_not_line_breaks(g):
     out = g.insert_root(text, "h", NEW)
     assert out == text + "\n" + NEW + "\n"
     assert [t.first_line for t in g.parse_page("p.md", out)] == [5]
+
+
+def test_cross_page_reply_under_an_existing_thread_stays_separate(g):
+    page = "# H\n\npara\n\n<!-- RC#AA-1 A 2026-01-01 | root -->\n"
+    out = g.insert_root(page, "h", "<!-- RC#BB-1 B 2026-01-01 re QQ-9 | reply from another page -->")
+    assert [(t.id, [c.id for c in t.lines]) for t in g.parse_page("p.md", out)] == [("AA-1", ["AA-1"]), ("BB-1", ["BB-1"])]
+    plain = g.insert_root(page, "h", NEW)  # a plain root still sits directly under the previous thread
+    assert split(plain)[-2:] == ["<!-- RC#AA-1 A 2026-01-01 | root -->", NEW]
+
+
+def split(text):
+    return text.split("\n")[:-1]
