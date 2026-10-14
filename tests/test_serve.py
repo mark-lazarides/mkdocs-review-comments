@@ -59,3 +59,16 @@ def test_bad_requests_are_rejected_without_writing(writer, docs, body, message):
 def test_api_url_follows_the_dev_addr_host():
     assert api_url("127.0.0.1", 8803) == "http://127.0.0.1:8803"
     assert api_url("0.0.0.0", 9000) == "http://0.0.0.0:9000"
+
+
+def test_concurrent_posts_get_distinct_ids(writer, docs):
+    from concurrent.futures import ThreadPoolExecutor
+
+    def post(i):
+        return writer.write({"page": "index.md", "author": "Mark", "initials": "ML", "text": f"c{i}", "anchor": "two"})["id"]
+
+    with ThreadPoolExecutor(8) as ex:
+        ids = list(ex.map(post, range(24)))
+    assert len(set(ids)) == 24
+    threads = Grammar().parse_page("index.md", read(docs))
+    assert sorted(t.id for t in threads if t.id.startswith("ML")) == sorted(ids)

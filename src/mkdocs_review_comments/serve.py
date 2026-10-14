@@ -39,10 +39,15 @@ class CommentWriter:
     def __init__(self, docs_dir: Path, grammar: Grammar):
         self.docs = docs_dir.resolve()
         self.grammar = grammar
+        self._lock = threading.Lock()  # the server is threaded; numbering and the file edit must not interleave
+
+    def write(self, body: dict) -> dict:
+        with self._lock:
+            return self._write(body)
 
     FIELDS = ("page", "author", "initials", "text", "anchor", "re", "resolve")
 
-    def write(self, body: dict) -> dict:
+    def _write(self, body: dict) -> dict:
         g = self.grammar
         if not isinstance(body, dict):
             raise ValueError("body must be a JSON object")
