@@ -29,7 +29,7 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from .core import Comment, Grammar, clean_text, index_by_id, next_number
+from .core import Comment, Grammar, SourceFile, clean_text, index_by_id, next_number
 
 INITIALS_RE = re.compile(r"^[A-Z]{2,3}$")
 log = logging.getLogger("rc-api")
@@ -52,7 +52,8 @@ class CommentWriter:
             raise ValueError("author and text are required")
         date = dt.date.today().isoformat()
         threads = g.scan(self.docs)
-        page_text = path.read_text(encoding="utf-8")
+        src = SourceFile.read(path)
+        page_text = src.text
         if body.get("resolve"):
             t = index_by_id(threads).get(body["resolve"])
             if t is None:
@@ -83,7 +84,7 @@ class CommentWriter:
                 c = Comment(id=cid, author=author, date=date, text=text, line_no=0)
                 new_text = g.insert_root(page_text, str(body.get("anchor", "")), g.format_line(c))
                 result = {"id": cid, "mode": "root"}
-        path.write_text(new_text, encoding="utf-8")
+        src.write(new_text)
         return result
 
 

@@ -28,6 +28,8 @@ from typing import Callable
 
 from markdown.extensions.toc import slugify as _md_slugify
 
+BOM = "\ufeff"
+
 DEFAULT_TAG = "RC"
 DEFAULT_LOG_PAGE = "reviews/comment-log.md"
 ID_RE = r"[A-Z]{2,3}-\d+"
@@ -103,6 +105,45 @@ class Thread:
         return self.lines[-1].line_no
 
 
+@dataclass
+class SourceFile:
+    """A markdown file read for editing: text normalised to LF, plus what is needed to write it back unchanged.
+
+    Every write path goes through here so that a one-line edit stays a one-line diff: the file keeps
+    its CRLF or LF endings, its BOM if it had one, and the presence or absence of a final newline.
+    """
+
+    path: Path
+    text: str  # LF line endings, no BOM
+    eol: str = "\n"
+    bom: bool = False
+    final_newline: bool = True
+
+    @classmethod
+    def read(cls, path: Path) -> SourceFile:
+        with open(path, encoding="utf-8", newline="") as f:
+            raw = f.read()
+        bom = raw.startswith(BOM)
+        if bom:
+            raw = raw[len(BOM) :]
+        eol = "\r\n" if "\r\n" in raw else "\n"
+        text = raw.replace("\r\n", "\n")
+        return cls(path, text, eol, bom, final_newline=(text == "" or text.endswith("\n")))
+
+    def write(self, text: str) -> None:
+        if not self.final_newline and text.endswith("\n"):
+            text = text[:-1]
+        out = (BOM if self.bom else "") + text.replace("\n", self.eol)
+        with open(self.path, "w", encoding="utf-8", newline="") as f:
+            f.write(out)
+        self.text = text
+
+
+def read_text(path: Path) -> str:
+    """The file's text with LF endings and no BOM, for parsing."""
+    return SourceFile.read(path).text
+
+
 class Grammar:
     """The tag and page conventions, shared by the plugin and the CLI."""
 
@@ -164,7 +205,7 @@ class Grammar:
             rel = path.relative_to(docs_dir).as_posix()
             if rel == self.log_page:
                 continue
-            threads.extend(self.parse_page(rel, path.read_text(encoding="utf-8")))
+            threads.extend(self.parse_page(rel, read_text(path)))
         return threads
 
     def archived_ids(self, docs_dir: Path) -> set[str]:
@@ -173,7 +214,7 @@ class Grammar:
         if not log.exists():
             return set()
         entry = re.compile(rf"^###\s+(?P<id>{ID_RE})\s")
-        return {m["id"] for line in log.read_text(encoding="utf-8").splitlines() if (m := entry.match(line))}
+        return {m["id"] for line in read_text(log).splitlines() if (m := entry.match(line))}
 
     # -- writing ---------------------------------------------------------
 
@@ -254,7 +295,7 @@ class Grammar:
                     problems.append(f"{where}: reply to unknown id {c.re}")
         for path in sorted(docs_dir.rglob("*.md")):
             rel = path.relative_to(docs_dir).as_posix()
-            lines = path.read_text(encoding="utf-8").splitlines()
+            lines = read_text(path).splitlines()
             for i, raw in enumerate(lines):
                 if self.parse_line(raw, i + 1) is None:
                     continue
