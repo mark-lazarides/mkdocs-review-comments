@@ -137,3 +137,39 @@ def test_check_flags_malformed_tagged_lines(g, tmp_path):
     (tmp_path / "p.md").write_text("## H\n\n<!-- RC#AA-1 A 2026-01-01 | unterminated\nstray -->\n<!-- RC#bad -->\n", encoding="utf-8")
     problems = g.check(g.scan(tmp_path), tmp_path)
     assert [p.split(":")[1] for p in problems if "malformed" in p] == ["3", "5"]
+
+
+FENCED = """---
+title: Front
+---
+
+# Real
+
+```markdown
+# fake heading
+<!-- RC#ZZ-1 Doc 2026-01-01 | example in the docs -->
+```
+
+~~~
+<!-- RC#ZZ-2 Doc 2026-01-01 | tilde fence -->
+~~~
+
+<!-- RC#AA-1 Ann 2026-01-01 | real -->
+"""
+
+
+def test_fences_and_front_matter_are_not_parsed(g):
+    threads = g.parse_page("p.md", FENCED)
+    assert [(t.id, t.heading) for t in threads] == [("AA-1", "Real")]
+
+
+def test_insert_root_ignores_fenced_headings_and_front_matter(g):
+    with pytest.raises(KeyError):
+        g.insert_root(FENCED, "fake-heading", NEW)
+    out = g.insert_root(FENCED, "", NEW).splitlines()
+    assert out[:4] == ["---", "title: Front", "---", ""] and out[4] == NEW
+
+
+def test_check_ignores_fenced_comments(g, tmp_path):
+    (tmp_path / "p.md").write_text("# H\n\n```\n<!-- RC#bad -->\n| a |\n<!-- RC#AA-1 A 2026-01-01 | x -->\n| b |\n```\n", encoding="utf-8")
+    assert g.check(g.scan(tmp_path), tmp_path) == []

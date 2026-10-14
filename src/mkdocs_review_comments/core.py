@@ -183,7 +183,11 @@ class Grammar:
         threads: list[Thread] = []
         heading, anchor = "", ""
         current: Thread | None = None
-        for i, raw in enumerate(text.splitlines(), start=1):
+        lines = text.splitlines()
+        skip = protected_lines(lines)
+        for i, raw in enumerate(lines, start=1):
+            if skip[i - 1]:
+                continue
             h = self.heading_anchor(raw)
             if h:
                 heading, anchor = h
@@ -236,12 +240,13 @@ class Grammar:
         or a list.  An empty anchor means the top of the page, before the first heading.
         """
         lines = page_text.splitlines()
-        start = None  # index of the heading line, or -1 for the page top
+        skip = protected_lines(lines)
+        start = None  # index of the heading line, or of the last front-matter line, or -1 for the page top
         if anchor == "":
-            start = -1
+            start = front_matter_end(lines)
         else:
             for i, raw in enumerate(lines):
-                h = self.heading_anchor(raw)
+                h = None if skip[i] else self.heading_anchor(raw)
                 if h and h[1] == anchor:
                     start = i
                     break
@@ -249,7 +254,7 @@ class Grammar:
             raise KeyError(f"no heading with anchor {anchor!r}")
         end = len(lines)  # index of the next heading, or EOF
         for j in range(start + 1, len(lines)):
-            if HEADING_RE.match(lines[j]):
+            if not skip[j] and HEADING_RE.match(lines[j]):
                 end = j
                 break
         last = end - 1
@@ -257,7 +262,8 @@ class Grammar:
             last -= 1
         insert_at = last + 1
         prev_is_comment = last >= 0 and last > start and self.parse_line(lines[last], 0) is not None
-        block = [line] if last == start or prev_is_comment else ["", line]
+        directly_under_heading = last == start and anchor != ""
+        block = [line] if directly_under_heading or last < 0 or prev_is_comment else ["", line]
         if end < len(lines) and insert_at == end:
             block = block + [""]
         lines[insert_at:insert_at] = block
@@ -297,7 +303,10 @@ class Grammar:
         for path in sorted(docs_dir.rglob("*.md")):
             rel = path.relative_to(docs_dir).as_posix()
             lines = read_text(path).splitlines()
+            skip = protected_lines(lines)
             for i, raw in enumerate(lines):
+                if skip[i]:
+                    continue
                 if self.parse_line(raw, i + 1) is None:
                     if self._tagged.match(raw):
                         problems.append(f"{rel}:{i + 1}: malformed review comment (expected <!-- {self.tag}#XX-1 Name YYYY-MM-DD | text -->)")
@@ -307,6 +316,39 @@ class Grammar:
                 if above.startswith("|") and below.startswith("|"):
                     problems.append(f"{rel}:{i + 1}: comment between table rows will break the table")
         return problems
+
+
+FENCE_RE = re.compile(r"^\s*(?P<fence>`{3,}|~{3,})")
+
+
+def front_matter_end(lines: list[str]) -> int:
+    """Index of the closing ``---`` of a YAML front-matter block, or -1 if the page has none."""
+    if not lines or lines[0].strip() != "---":
+        return -1
+    for i in range(1, len(lines)):
+        if lines[i].strip() in ("---", "..."):
+            return i
+    return -1
+
+
+def protected_lines(lines: list[str]) -> list[bool]:
+    """Which lines are front matter or inside a fenced code block, where headings and comments are just text."""
+    out = [False] * len(lines)
+    fm = front_matter_end(lines)
+    for i in range(fm + 1):
+        out[i] = True
+    fence: str | None = None
+    for i in range(fm + 1, len(lines)):
+        m = FENCE_RE.match(lines[i])
+        if fence is None:
+            if m:
+                fence = m["fence"]
+                out[i] = True
+            continue
+        out[i] = True
+        if m and m["fence"][0] == fence[0] and len(m["fence"]) >= len(fence) and lines[i].strip() == m["fence"]:
+            fence = None
+    return out
 
 
 def index_by_id(threads: list[Thread]) -> dict[str, Thread]:
