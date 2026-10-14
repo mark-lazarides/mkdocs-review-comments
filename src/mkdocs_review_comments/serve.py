@@ -125,13 +125,18 @@ def make_handler(writer: CommentWriter):
     return Handler
 
 
-def _port_in_use(port: int) -> bool:
+def _port_in_use(host: str, port: int) -> bool:
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect(("127.0.0.1", port))
+            s.connect(("127.0.0.1" if host in ("0.0.0.0", "") else host, port))
         return True
     except OSError:
         return False
+
+
+def api_url(host: str, api_port: int) -> str:
+    """What the page should post to. A wildcard host is left for the page to fill in from its own location."""
+    return f"http://{host}:{api_port}"
 
 
 def serve(config_file: str | None, host: str, port: int, api_port: int, docs_dir: Path, grammar: Grammar) -> None:
@@ -141,13 +146,16 @@ def serve(config_file: str | None, host: str, port: int, api_port: int, docs_dir
     # Refuse to start on top of another copy. Windows lets two processes bind the same port
     # when SO_REUSEADDR is set, which both servers do, and the result is two sites on one URL.
     for p in (api_port, port):
-        if _port_in_use(p):
+        if _port_in_use(host, p):
             sys.exit(f"port {p} is already in use: another `rc serve` or `mkdocs serve` is running. Stop it first.")
 
-    os.environ["RC_REVIEW"] = "1"  # the plugin reads this
-    api = ThreadingHTTPServer(("127.0.0.1", api_port), make_handler(CommentWriter(docs_dir, grammar)))
+    # The plugin reads both: review mode on, and where the page-side comment box should post.
+    os.environ["RC_REVIEW"] = "1"
+    os.environ["RC_API_URL"] = api_url(host, api_port)
+    # The API listens on the same interface as the site, so a reviewer on another machine can comment too.
+    api = ThreadingHTTPServer((host, api_port), make_handler(CommentWriter(docs_dir, grammar)))
     threading.Thread(target=api.serve_forever, daemon=True).start()
-    log.info("comment API on http://127.0.0.1:%d/api/comment", api_port)
+    log.info("comment API on %s/api/comment", os.environ["RC_API_URL"])
     log.info("review site will be on http://%s:%d/ once the build below finishes", host, port)
 
     # livereload=True is passed explicitly: with click 8.2 the CLI default silently comes

@@ -71,6 +71,8 @@ serves the review build (default `127.0.0.1:8802`) and a small comment API (`880
 
 `rc serve` refuses to start if either port is already in use, naming the port, because Windows will otherwise let two copies bind the same port and answer at random.
 
+The comment API listens on the same interface as the site and the page is told where it is, so `rc serve -a 0.0.0.0:8802 --api-port 9000` lets a colleague on the network open `http://<your-ip>:8802/` and comment, with no change to `mkdocs.yml`. The `api_url` plugin option only matters when the review build is served by something other than `rc serve`.
+
 ## The command line
 
 ```

@@ -1,5 +1,6 @@
 """The MkDocs plugin, exercised through real ``mkdocs build`` runs on a tiny site."""
 
+import os
 import re
 import subprocess
 import sys
@@ -30,7 +31,7 @@ PAGE = textwrap.dedent("""\
 OTHER = "# Other\n\n<!-- RC#DD-1 Dee 2026-10-13 | on the other page -->\n<!-- RC#EE-1 Ed 2026-10-13 re CC-1 | cross-page reply -->\n"
 
 
-def build(tmp_path: Path, *, review: bool, theme: str = "mkdocs", extensions: list[str] = ()) -> dict[str, str]:
+def build(tmp_path: Path, *, review: bool, theme: str = "mkdocs", extensions: list[str] = (), env: dict[str, str] | None = None) -> dict[str, str]:
     docs = tmp_path / "docs"
     docs.mkdir(exist_ok=True)
     (docs / "index.md").write_text(PAGE, encoding="utf-8")
@@ -38,7 +39,7 @@ def build(tmp_path: Path, *, review: bool, theme: str = "mkdocs", extensions: li
     cfg = f"site_name: Site\ntheme:\n  name: {theme}\nplugins:\n  - review-comments:\n      review: {str(review).lower()}\n"
     cfg += "markdown_extensions:\n" + "".join(f"  - {e}\n" for e in ["admonition", *extensions])
     (tmp_path / "mkdocs.yml").write_text(cfg, encoding="utf-8")
-    r = subprocess.run([sys.executable, "-m", "mkdocs", "build", "-q"], cwd=tmp_path, capture_output=True, text=True)
+    r = subprocess.run([sys.executable, "-m", "mkdocs", "build", "-q"], cwd=tmp_path, capture_output=True, text=True, env={**os.environ, **(env or {})})
     assert r.returncode == 0, r.stderr
     out = {}
     for name, rel in (("index", "index.html"), ("other", "other/index.html")):
@@ -76,3 +77,14 @@ def test_review_build_links_replies_across_pages(tmp_path):
 def test_review_build_marks_the_site_name(tmp_path):
     html = (build(tmp_path, review=True), (tmp_path / "site" / "index.html").read_text(encoding="utf-8"))[1]
     assert "Site (review build)" in html
+
+
+def test_rc_serve_environment_selects_review_mode_and_api_url(tmp_path):
+    html = build(tmp_path, review=False, env={"RC_REVIEW": "1", "RC_API_URL": "http://0.0.0.0:9911"})["index"]
+    assert 'class="rc-thread' in html
+    assert '"api": "http://0.0.0.0:9911"' in html
+
+
+def test_api_url_default_comes_from_the_plugin_option(tmp_path):
+    html = build(tmp_path, review=True, env={"RC_API_URL": ""})["index"]
+    assert '"api": "http://127.0.0.1:8803"' in html

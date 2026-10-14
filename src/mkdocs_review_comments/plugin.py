@@ -10,6 +10,8 @@
 Review mode is on when any of these is true: the ``review`` option, the
 environment variable ``RC_REVIEW=1`` (what ``rc serve`` sets), or
 ``extra.review_comments: true`` in the config (handy with an INHERIT file).
+``RC_API_URL``, also set by ``rc serve``, overrides ``api_url`` so the
+buttons always post to the API that is actually running.
 """
 
 from __future__ import annotations
@@ -93,7 +95,8 @@ class ReviewCommentsPlugin(BasePlugin[ReviewCommentsConfig]):
             return output
         css = (ASSETS / "review.css").read_text(encoding="utf-8")
         js = (ASSETS / "review.js").read_text(encoding="utf-8")
-        cfg = json.dumps({"page": page.file.src_uri, "api": self.config.api_url})
+        api = os.environ.get("RC_API_URL") or self.config.api_url  # rc serve sets the variable to match --api-port
+        cfg = json.dumps({"page": page.file.src_uri, "api": api})
         head = f"<style>\n{css}\n</style>\n"
         body = f"<script>window.RC = {cfg};</script>\n<script>\n{js}\n</script>\n"
         output = output.replace("</head>", head + "</head>", 1)

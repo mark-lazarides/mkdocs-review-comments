@@ -4,6 +4,9 @@
 (function () {
   var cfg = window.RC;
   if (!cfg || !cfg.page) return;
+  // `rc serve -a 0.0.0.0:8802` serves to the LAN; the API is on the same interface, so reach it
+  // through whatever hostname this page was loaded from.
+  cfg.api = (cfg.api || "").replace(/\/\/(0\.0\.0\.0|\[::\]|::)(?=[:\/]|$)/, "//" + location.hostname);
 
   function store(k, v) { try { localStorage.setItem("rc." + k, v); } catch (e) {} }
   function load(k) { try { return localStorage.getItem("rc." + k) || ""; } catch (e) { return ""; } }
