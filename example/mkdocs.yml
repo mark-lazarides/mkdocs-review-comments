@@ -1,0 +1,34 @@
+# A small site to try review comments on.
+#
+#   pip install mkdocs-material
+#   mkrc -f example/mkdocs.yml serve      # review build with the comment box, http://127.0.0.1:8802/
+#   mkdocs build -f example/mkdocs.yml    # the issued site: no comments anywhere in it
+#
+# The pages already carry a few threads so the review build has something to show.
+
+site_name: PS-3 Control Narrative
+docs_dir: docs
+site_dir: ../build/example-site
+use_directory_urls: true
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - content.code.copy
+
+nav:
+  - Control narrative: index.md
+  - Panel schedule: electrical/panel-schedule.md
+
+markdown_extensions:
+  - admonition
+  - tables
+  - attr_list
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - review-comments:
+      log_page: reviews/comment-log.md
