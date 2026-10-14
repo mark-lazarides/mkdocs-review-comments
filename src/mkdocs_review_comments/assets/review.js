@@ -40,7 +40,9 @@
       onSubmit({ author: author.value.trim(), initials: initials.value.trim().toUpperCase(), text: text.value.trim() })
         .then(function (r) {
           status.textContent = "saved " + r.id + ", rebuilding…";
-          setTimeout(function () { location.reload(); }, 2500);
+          // MkDocs' live reload refreshes the page when the rebuild finishes; this is only a
+          // fallback for a review build served without it, late enough not to catch a half-built site.
+          setTimeout(function () { location.reload(); }, 8000);
         })
         .catch(function (e) { status.textContent = "failed: " + e; });
     };
