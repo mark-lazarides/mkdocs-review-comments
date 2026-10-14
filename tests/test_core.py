@@ -131,3 +131,9 @@ def test_archived_ids_satisfy_check(g, tmp_path):
 
 def test_clean_text():
     assert clean_text("a |\n b --> c") == "a / b -- > c"
+
+
+def test_check_flags_malformed_tagged_lines(g, tmp_path):
+    (tmp_path / "p.md").write_text("## H\n\n<!-- RC#AA-1 A 2026-01-01 | unterminated\nstray -->\n<!-- RC#bad -->\n", encoding="utf-8")
+    problems = g.check(g.scan(tmp_path), tmp_path)
+    assert [p.split(":")[1] for p in problems if "malformed" in p] == ["3", "5"]

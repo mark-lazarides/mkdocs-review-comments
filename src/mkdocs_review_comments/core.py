@@ -152,6 +152,7 @@ class Grammar:
         self.log_page = log_page
         self.slugify = slugify
         self._re = comment_re(tag)
+        self._tagged = re.compile(rf"^\s*<!--\s*{re.escape(tag)}#")  # looks like one of ours, whether or not it parses
 
     # -- parsing ---------------------------------------------------------
 
@@ -298,6 +299,8 @@ class Grammar:
             lines = read_text(path).splitlines()
             for i, raw in enumerate(lines):
                 if self.parse_line(raw, i + 1) is None:
+                    if self._tagged.match(raw):
+                        problems.append(f"{rel}:{i + 1}: malformed review comment (expected <!-- {self.tag}#XX-1 Name YYYY-MM-DD | text -->)")
                     continue
                 above = lines[i - 1].lstrip() if i > 0 else ""
                 below = lines[i + 1].lstrip() if i + 1 < len(lines) else ""
