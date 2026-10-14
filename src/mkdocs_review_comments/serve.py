@@ -126,8 +126,8 @@ def make_handler(writer: CommentWriter):
         def do_OPTIONS(self):  # CORS preflight from the site on the other port
             self._send(204, {})
 
-        def do_GET(self):
-            self._send(200, {"ok": True, "docs": str(writer.docs)})
+        def do_GET(self):  # liveness only; the docs path is not something any site on the network needs
+            self._send(200, {"ok": True})
 
         def do_POST(self):
             if self.path.rstrip("/") != "/api/comment":
