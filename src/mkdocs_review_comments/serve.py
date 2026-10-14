@@ -40,14 +40,21 @@ class CommentWriter:
         self.docs = docs_dir.resolve()
         self.grammar = grammar
 
+    FIELDS = ("page", "author", "initials", "text", "anchor", "re", "resolve")
+
     def write(self, body: dict) -> dict:
         g = self.grammar
-        page = str(body.get("page", ""))
+        if not isinstance(body, dict):
+            raise ValueError("body must be a JSON object")
+        for k in self.FIELDS:
+            if k in body and body[k] is not None and not isinstance(body[k], str):
+                raise ValueError(f"{k} must be a string")
+        page = body.get("page") or ""
         path = (self.docs / page).resolve()
-        if not page or not path.is_file() or self.docs not in path.parents:
+        if not page or path.suffix.lower() != ".md" or not path.is_file() or self.docs not in path.parents:
             raise ValueError(f"unknown page {page!r}")
-        author = " ".join(str(body.get("author", "")).split())
-        text = clean_text(str(body.get("text", "")))
+        author = " ".join((body.get("author") or "").split())
+        text = clean_text(body.get("text") or "")
         if not author or not text:
             raise ValueError("author and text are required")
         date = dt.date.today().isoformat()
@@ -66,7 +73,7 @@ class CommentWriter:
             new_text = g.append_to_thread(page_text, t, g.format_line(c))
             result = {"id": t.id, "mode": "resolve"}
         else:
-            initials = str(body.get("initials", "")).strip().upper()
+            initials = (body.get("initials") or "").strip().upper()
             if not INITIALS_RE.match(initials):
                 raise ValueError("initials must be two or three letters")
             cid = f"{initials}-{next_number(threads, initials, g.archived_ids(self.docs))}"
@@ -78,11 +85,11 @@ class CommentWriter:
                 if t.page == page:
                     new_text = g.append_to_thread(page_text, t, g.format_line(c))
                 else:  # reply from another page: a new thread under the given heading, linked by ``re``
-                    new_text = g.insert_root(page_text, str(body.get("anchor", "")), g.format_line(c))
+                    new_text = g.insert_root(page_text, (body.get("anchor") or ""), g.format_line(c))
                 result = {"id": cid, "mode": "reply"}
             else:
                 c = Comment(id=cid, author=author, date=date, text=text, line_no=0)
-                new_text = g.insert_root(page_text, str(body.get("anchor", "")), g.format_line(c))
+                new_text = g.insert_root(page_text, (body.get("anchor") or ""), g.format_line(c))
                 result = {"id": cid, "mode": "root"}
         src.write(new_text)
         return result
@@ -114,7 +121,7 @@ def make_handler(writer: CommentWriter):
                 length = int(self.headers.get("Content-Length", "0"))
                 body = json.loads(self.rfile.read(length) or b"{}")
                 result = writer.write(body)
-            except (ValueError, KeyError, json.JSONDecodeError) as e:
+            except (ValueError, KeyError, TypeError, json.JSONDecodeError) as e:
                 return self._send(400, {"error": str(e)})
             log.info("wrote %s %s on %s", result["mode"], result["id"], body.get("page"))
             self._send(200, result)
