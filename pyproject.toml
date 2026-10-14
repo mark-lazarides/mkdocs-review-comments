@@ -15,6 +15,11 @@ dependencies = [
     "markdown>=3.4",
 ]
 
+[project.urls]
+Homepage = "https://github.com/mark-lazarides/mkdocs-review-comments"
+Repository = "https://github.com/mark-lazarides/mkdocs-review-comments"
+Issues = "https://github.com/mark-lazarides/mkdocs-review-comments/issues"
+
 [project.optional-dependencies]
 test = ["pytest>=7"]
 

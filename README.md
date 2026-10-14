@@ -11,7 +11,7 @@ Review comments that live **in the markdown**, as tagged HTML comments. They tra
 ## Install
 
 ```
-pip install git+https://<your host>/mkdocs-review-comments.git
+pip install git+https://github.com/mark-lazarides/mkdocs-review-comments.git
 ```
 
 or, for development, `pip install -e .` from a clone. Then in `mkdocs.yml`:
