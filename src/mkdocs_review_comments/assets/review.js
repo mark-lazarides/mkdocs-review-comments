@@ -81,7 +81,7 @@
   content.querySelectorAll(".rc-thread").forEach(function (t) {
     var id = (t.id || "").replace(/^rc-/, "");
     if (!id) return;
-    var bar = document.createElement("div"); bar.className = "rc-actions";
+    var bar = document.createElement("span"); bar.className = "rc-actions"; // span: the thread is a <p>
     var reply = button("Reply", "Reply in this thread");
     reply.onclick = function () {
       openPanel("Reply to " + id, "reply", function (f) {

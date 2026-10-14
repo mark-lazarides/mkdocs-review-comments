@@ -91,7 +91,7 @@ rc serve [-a IP:PORT] [--api-port N]
 ## Notes
 
 - With click 8.2, `mkdocs serve` silently loses its live-reload default and never rebuilds on file changes. `rc serve` forces it on. If you run `mkdocs serve` by hand, pass `--livereload`.
-- The rendered notes use Material for MkDocs' CSS variables where present and plain colours otherwise, so other themes work, just less tidily.
+- The rendered notes use Material for MkDocs' CSS variables where present and plain colours otherwise, so other themes work, just less tidily. A review build enables the `attr_list` Markdown extension if the site does not already, since the rendered threads carry their class and anchor that way.
 - Python 3.10 or later.
 
 ## Development

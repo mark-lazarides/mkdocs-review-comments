@@ -48,6 +48,8 @@ class ReviewCommentsPlugin(BasePlugin[ReviewCommentsConfig]):
         by_env = os.environ.get("RC_REVIEW", "").strip().lower() in {"1", "true", "yes", "on"}
         by_extra = bool((config.extra or {}).get("review_comments"))
         self.review = self.config.review or by_env or by_extra
+        if self.review and "attr_list" not in config.markdown_extensions:
+            config.markdown_extensions.append("attr_list")  # the rendered threads carry their class and anchor this way
         slugify = default_slugify
         toc = (config.mdx_configs or {}).get("toc") or {}
         if callable(toc.get("slugify")):
@@ -113,19 +115,22 @@ class ReviewCommentsPlugin(BasePlugin[ReviewCommentsConfig]):
         return f"[{cid}]({rel}#{anchor})"
 
     def _render(self, t: Thread, page: str) -> list[str]:
+        """One markdown paragraph per thread, classed and anchored with attr_list.
+
+        A paragraph, rather than a raw ``<div markdown="1">`` block, renders the same whether the
+        thread sits at the top level or indented inside an admonition, and needs no ``md_in_html``.
+        Each comment is a ``<span class="rc-line">`` ended by ``<br>``; the CSS makes them blocks.
+        """
         ind = t.root.indent
-        cls = "rc-thread rc-resolved" if t.is_resolved else "rc-thread"
-        out = [f'{ind}<div class="{cls}" id="rc-{t.id}" markdown="1">', ""]
+        out: list[str] = []
         for c in t.lines:
             if c.resolved:
-                out.append(f'{ind}<p class="rc-line rc-res" markdown="1">**Resolved** by {c.author} {c.date}: {c.text}</p>')
+                body = f'<span class="rc-line rc-res">**Resolved** by {c.author} {c.date}: {c.text}</span>'
             else:
                 ref = f" re {self._link(c.re, page)}" if c.re else ""
                 kind = "rc-reply" if c.is_reply else "rc-root"
-                out.append(
-                    f'{ind}<p class="rc-line {kind}" markdown="1">'
-                    f'<span class="rc-id">{c.id}</span> **{c.author}** {c.date}{ref}: {c.text}</p>'
-                )
-            out.append("")
-        out.append(f"{ind}</div>")
+                body = f'<span class="rc-line {kind}"><span class="rc-id">{c.id}</span> **{c.author}** {c.date}{ref}: {c.text}</span>'
+            out.append(f"{ind}{body}<br>")
+        cls = ".rc-thread .rc-resolved" if t.is_resolved else ".rc-thread"
+        out.append(f"{ind}{{ {cls} #rc-{t.id} }}")
         return out

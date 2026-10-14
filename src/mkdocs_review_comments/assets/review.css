@@ -12,9 +12,10 @@
   background: var(--md-code-bg-color, rgba(128, 128, 128, 0.12));
   opacity: 0.7;
 }
-.rc-thread .rc-line { margin: 0.2rem 0; }
+.rc-thread .rc-line { display: block; margin: 0.2rem 0; }
 .rc-thread .rc-reply { margin-left: 1.2rem; }
 .rc-thread .rc-res { margin-left: 1.2rem; font-style: italic; }
+.rc-thread br { display: none; }
 .rc-thread .rc-id {
   font-family: var(--md-code-font-family, monospace);
   font-size: 0.85em;
@@ -32,7 +33,7 @@
 .rc-btn:hover { background: #f9a825; color: #000; }
 h1 .rc-btn, h2 .rc-btn, h3 .rc-btn, h4 .rc-btn, h5 .rc-btn, h6 .rc-btn { opacity: 0.35; }
 h1:hover .rc-btn, h2:hover .rc-btn, h3:hover .rc-btn, h4:hover .rc-btn, h5:hover .rc-btn, h6:hover .rc-btn { opacity: 1; }
-.rc-actions { margin-top: 0.3rem; }
+.rc-actions { display: block; margin-top: 0.3rem; }
 .rc-panel {
   position: fixed; right: 1rem; bottom: 1rem; z-index: 50; width: min(34rem, calc(100vw - 2rem));
   background: var(--md-default-bg-color, #fff); color: var(--md-default-fg-color, #222);
