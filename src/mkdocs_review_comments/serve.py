@@ -11,6 +11,9 @@ POST /api/comment  JSON body:
     initials  id prefix, e.g. "ML"                                           (required unless resolve)
     text      the comment                                                     (required)
     anchor    heading anchor for a new root comment (omit or "" for page top)
+    level     heading level 1-6 and
+    ordinal   its 0-based position among headings of that level: the fallback when the
+              rendered anchor does not match a markdown heading (optional)
     re        id of the comment being replied to      (reply)
     resolve   id of the thread being resolved         (resolution)
 Exactly one of anchor / re / resolve selects the mode.
@@ -54,6 +57,13 @@ class CommentWriter:
         for k in self.FIELDS:
             if k in body and body[k] is not None and not isinstance(body[k], str):
                 raise ValueError(f"{k} must be a string")
+        where: dict = {"anchor": body.get("anchor") or ""}
+        for k in ("level", "ordinal"):
+            v = body.get(k)
+            if v is not None:
+                if isinstance(v, bool) or not isinstance(v, (int, str)) or (isinstance(v, str) and not v.isdigit()):
+                    raise ValueError(f"{k} must be a whole number")
+                where[k] = int(v)
         page = body.get("page") or ""
         path = (self.docs / page).resolve()
         if not page or path.suffix.lower() != ".md" or not path.is_file() or self.docs not in path.parents:
@@ -90,11 +100,11 @@ class CommentWriter:
                 if t.page == page:
                     new_text = g.append_to_thread(page_text, t, g.format_line(c))
                 else:  # reply from another page: a new thread under the given heading, linked by ``re``
-                    new_text = g.insert_root(page_text, (body.get("anchor") or ""), g.format_line(c))
+                    new_text = g.insert_root(page_text, line=g.format_line(c), **where)
                 result = {"id": cid, "mode": "reply"}
             else:
                 c = Comment(id=cid, author=author, date=date, text=text, line_no=0)
-                new_text = g.insert_root(page_text, (body.get("anchor") or ""), g.format_line(c))
+                new_text = g.insert_root(page_text, line=g.format_line(c), **where)
                 result = {"id": cid, "mode": "root"}
         src.write(new_text)
         return result

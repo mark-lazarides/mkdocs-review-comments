@@ -33,7 +33,10 @@ BOM = "\ufeff"
 DEFAULT_TAG = "RC"
 DEFAULT_LOG_PAGE = "reviews/comment-log.md"
 ID_RE = r"[A-Z]{2,3}-\d+"
-HEADING_RE = re.compile(r"^(#{1,6})\s+(?P<title>.*?)(?:\s*\{\s*#(?P<anchor>[^}\s]+)\s*\})?\s*$")
+# ATX heading, with optional closing hashes and an optional attr_list block: ``## Title ## {: #id .cls }``.
+HEADING_RE = re.compile(r"^(?P<hashes>#{1,6})\s+(?P<title>.*?)(?:\s+#+)?(?:\s*\{:?\s*(?P<attrs>[^}]*)\})?\s*$")
+ATTR_ID_RE = re.compile(r"(?:^|\s)#(?P<id>[^\s}]+)")
+SETEXT_RE = re.compile(r"^ {0,3}(?P<char>=+|-+)\s*$")
 HR_RE = re.compile(r"\s*([-*_])(\s*\1){2,}\s*")
 Slugify = Callable[[str], str]
 
@@ -67,6 +70,14 @@ class Comment:
     @property
     def is_reply(self) -> bool:
         return self.re is not None
+
+
+@dataclass
+class Heading:
+    index: int  # 0-based line index of the heading text
+    level: int
+    title: str
+    anchor: str
 
 
 @dataclass
@@ -181,11 +192,58 @@ class Grammar:
         )
 
     def heading_anchor(self, line: str) -> tuple[str, str] | None:
-        """(title, anchor) if the line is a heading, else None."""
+        """(title, anchor) if the line is an ATX heading, else None."""
         h = HEADING_RE.match(line)
         if not h:
             return None
-        return h["title"], (h["anchor"] or self.slugify(h["title"]))
+        return h["title"], self._anchor_of(h["title"], h["attrs"])
+
+    def _anchor_of(self, title: str, attrs: str | None) -> str:
+        m = ATTR_ID_RE.search(attrs or "")
+        return m["id"] if m else self.slugify(title)
+
+    def headings(self, lines: list[str], skip: list[bool] | None = None) -> list[Heading]:
+        """Every heading outside fences and front matter, ATX or setext, in page order."""
+        skip = protected_lines(lines) if skip is None else skip
+        out: list[Heading] = []
+        for i, raw in enumerate(lines):
+            if skip[i]:
+                continue
+            h = HEADING_RE.match(raw)
+            if h:
+                out.append(Heading(i, len(h["hashes"]), h["title"], self._anchor_of(h["title"], h["attrs"])))
+                continue
+            u = SETEXT_RE.match(raw)
+            if u and i > 0 and not skip[i - 1] and lines[i - 1].strip() and (i == 1 or not lines[i - 2].strip()):
+                prev = lines[i - 1]
+                if not HEADING_RE.match(prev) and (out == [] or out[-1].index != i - 1) and not prev.lstrip().startswith(("<!--", "|", "- ", "* ", "+ ")):
+                    title = prev.strip()
+                    out.append(Heading(i - 1, 1 if u["char"][0] == "=" else 2, title, self.slugify(title)))
+        return out
+
+    def locate_heading(self, lines: list[str], anchor: str, level: int | None = None, ordinal: int | None = None) -> int | None:
+        """Line index of the heading the page-side button meant, or -1 for the page top, or None.
+
+        The anchor the browser sends is the id MkDocs rendered, which usually equals our slug of
+        the raw heading but not always (markup in the title, duplicate headings, a custom slugify).
+        The level and ordinal of the clicked heading among headings of that level is the fallback,
+        and an h1 at ordinal 0 with no match is the one Material synthesises from the page title.
+        """
+        hs = self.headings(lines)
+        if anchor == "":
+            return -1
+        same = [h for h in hs if h.anchor == anchor]
+        if same and (level is None or any(h.level == level for h in same)):
+            return next(h for h in same if level is None or h.level == level).index
+        if level is not None and ordinal is not None:
+            of_level = [h for h in hs if h.level == level]
+            if 0 <= ordinal < len(of_level):
+                return of_level[ordinal].index
+            if level == 1 and ordinal == 0:
+                return -1
+        if same:
+            return same[0].index
+        return None
 
     def parse_page(self, page: str, text: str) -> list[Thread]:
         """Group the tagged comment lines of one page into threads."""
@@ -194,12 +252,13 @@ class Grammar:
         current: Thread | None = None
         lines = split_lines(text)
         skip = protected_lines(lines)
+        by_line = {h.index: h for h in self.headings(lines, skip)}
         for i, raw in enumerate(lines, start=1):
             if skip[i - 1]:
                 continue
-            h = self.heading_anchor(raw)
+            h = by_line.get(i - 1)
             if h:
-                heading, anchor = h
+                heading, anchor = h.title, h.anchor
                 current = None
                 continue
             c = self.parse_line(raw, i)
@@ -244,30 +303,28 @@ class Grammar:
             head += f" re {c.re}"
         return f"{c.indent}{head} | {c.text} -->"
 
-    def insert_root(self, page_text: str, anchor: str, line: str) -> str:
+    def insert_root(self, page_text: str, anchor: str, line: str, level: int | None = None, ordinal: int | None = None) -> str:
         """Insert a new root comment at the end of the section whose heading has ``anchor``.
 
         The comment goes after the section's last non-blank line, before any closing
         horizontal rule, separated by a blank line so it can never land inside a table
         or a list.  An empty anchor means the top of the page, before the first heading.
+        ``level`` and ``ordinal`` identify the heading when the anchor does not (see locate_heading).
         """
         lines = split_lines(page_text)
-        skip = protected_lines(lines)
-        start = None  # index of the heading line, or of the last front-matter line, or -1 for the page top
-        if anchor == "":
-            start = front_matter_end(lines)
-        else:
-            for i, raw in enumerate(lines):
-                h = None if skip[i] else self.heading_anchor(raw)
-                if h and h[1] == anchor:
-                    start = i
-                    break
-        if start is None:
+        found = self.locate_heading(lines, anchor, level, ordinal)
+        if found is None:
             raise KeyError(f"no heading with anchor {anchor!r}")
+        # index of the heading line, or of the last front-matter line, or -1 for the page top
+        start = front_matter_end(lines) if found == -1 else found
+        if found == -1:
+            anchor = ""
+        elif not HEADING_RE.match(lines[found]) and found + 1 < len(lines) and SETEXT_RE.match(lines[found + 1]):
+            start = found + 1  # setext heading: the underline belongs to it
         end = len(lines)  # index of the next heading, or EOF
-        for j in range(start + 1, len(lines)):
-            if not skip[j] and HEADING_RE.match(lines[j]):
-                end = j
+        for h in self.headings(lines):
+            if h.index > start:
+                end = h.index
                 break
         last = end - 1
         while last > start and (lines[last].strip() == "" or HR_RE.fullmatch(lines[last])):

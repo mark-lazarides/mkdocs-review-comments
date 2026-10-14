@@ -68,13 +68,18 @@
   var content = document.querySelector(".md-content") || document.querySelector("main") || document.body;
 
   // "+" on every heading: a new root comment at the end of that section.
+  // The id is what the server matches first; the level and the heading's ordinal among headings
+  // of that level let it find the right one when the rendered id differs from the markdown slug.
+  var seen = {};
   content.querySelectorAll("h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]").forEach(function (h) {
+    var level = +h.tagName[1], ordinal = seen[level] || 0;
+    seen[level] = ordinal + 1;
     var label = h.textContent.replace(/[¶#]+$/, "").trim();
     var b = button("+", "Add a review comment to this section");
     b.onclick = function (ev) {
       ev.preventDefault();
       openPanel("Comment on: " + label, "root", function (f) {
-        return post({ anchor: h.id, author: f.author, initials: f.initials, text: f.text });
+        return post({ anchor: h.id, level: level, ordinal: ordinal, author: f.author, initials: f.initials, text: f.text });
       });
     };
     h.appendChild(b);
