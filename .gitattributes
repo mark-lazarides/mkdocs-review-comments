@@ -1,0 +1,2 @@
+# Source and tests are LF everywhere; the tool itself preserves whatever line endings a docs page has.
+* text=auto eol=lf
