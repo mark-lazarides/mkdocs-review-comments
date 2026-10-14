@@ -88,7 +88,7 @@ def cmd_reply(site: Site, args) -> None:
     threads = site.threads()
     t = site.find(args.id)
     initials = args.initials.upper()
-    cid = f"{initials}-{next_number(threads, initials)}"
+    cid = f"{initials}-{next_number(threads, initials, site.grammar.archived_ids(site.docs))}"
     c = Comment(id=cid, author=clean_text(args.by), date=args.date, text=clean_text(args.text), line_no=0, indent=t.root.indent, re=args.id)
     src = site.source(t.page)
     src.write(site.grammar.append_to_thread(src.text, t, site.grammar.format_line(c)))
@@ -124,9 +124,9 @@ def _log_entry(site: Site, t: Thread) -> list[str]:
         if c.resolved:
             out.append(f"- **Resolved, {c.author} {c.date}:** {c.text}")
         elif c.is_reply:
-            out.append(f"- **{c.author} {c.date}** (re {c.re}): {c.text}")
+            out.append(f"- **{c.id} {c.author} {c.date}** (re {c.re}): {c.text}")
         else:
-            out.append(f"- **{c.author} {c.date}:** {c.text}")
+            out.append(f"- **{c.id} {c.author} {c.date}:** {c.text}")
     out.append("")
     return out
 

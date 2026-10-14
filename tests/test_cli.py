@@ -46,3 +46,16 @@ def test_resolve_text_is_cleaned(site):
     rc("resolve", "AA-2", "fixed | see -->", "--by", "Mark")
     res = Grammar().parse_page("index.md", page(site))[1].resolution
     assert res is not None and res.text == "fixed / see -- >"
+
+
+def test_ids_are_not_reused_after_archive(site):
+    rc("reply", "AA-1", "late reply", "--by", "Bob", "--as", "BB", "--date", "2026-01-03")  # BB-1 inside the resolved thread
+    rc("archive")
+    assert "AA-1" not in page(site) and "BB-1" not in page(site)
+    rc("reply", "AA-2", "fresh", "--by", "Ann", "--as", "AA", "--date", "2026-01-04")
+    rc("reply", "AA-2", "fresh", "--by", "Bob", "--as", "BB", "--date", "2026-01-04")
+    text = page(site)
+    assert "RC#AA-3 " in text and "RC#BB-2 " in text
+    with pytest.raises(SystemExit) as e:
+        rc("check")
+    assert e.value.code == 0

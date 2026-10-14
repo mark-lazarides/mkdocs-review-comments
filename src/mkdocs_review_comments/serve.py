@@ -69,7 +69,7 @@ class CommentWriter:
             initials = str(body.get("initials", "")).strip().upper()
             if not INITIALS_RE.match(initials):
                 raise ValueError("initials must be two or three letters")
-            cid = f"{initials}-{next_number(threads, initials)}"
+            cid = f"{initials}-{next_number(threads, initials, g.archived_ids(self.docs))}"
             if body.get("re"):
                 t = index_by_id(threads).get(body["re"])
                 if t is None:

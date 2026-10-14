@@ -214,11 +214,14 @@ class Grammar:
         return threads
 
     def archived_ids(self, docs_dir: Path) -> set[str]:
-        """Ids of threads already moved to the comment log page."""
+        """Every comment id, root or reply, already moved to the comment log page.
+
+        Roots are the ``### ID`` entry headings; replies are the ``- **ID Name date**`` bullets.
+        """
         log = docs_dir / self.log_page
         if not log.exists():
             return set()
-        entry = re.compile(rf"^###\s+(?P<id>{ID_RE})\s")
+        entry = re.compile(rf"^(?:###\s+|-\s+\*\*)(?P<id>{ID_RE})\s")
         return {m["id"] for line in read_text(log).splitlines() if (m := entry.match(line))}
 
     # -- writing ---------------------------------------------------------
@@ -361,15 +364,14 @@ def index_by_id(threads: list[Thread]) -> dict[str, Thread]:
     return out
 
 
-def next_number(threads: list[Thread], initials: str) -> int:
+def next_number(threads: list[Thread], initials: str, archived: set[str] = frozenset()) -> int:
+    """One past the highest number ``initials`` has used, in live threads or in the comment log."""
+    ids = {c.id for t in threads for c in t.lines if not c.resolved} | set(archived)
     n = 0
-    for t in threads:
-        for c in t.lines:
-            if c.resolved:
-                continue
-            ini, num = c.id.split("-")
-            if ini == initials:
-                n = max(n, int(num))
+    for cid in ids:
+        ini, num = cid.split("-")
+        if ini == initials:
+            n = max(n, int(num))
     return n + 1
 
 
