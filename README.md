@@ -27,7 +27,7 @@ Options, all optional:
 ```yaml
   - review-comments:
       tag: RC                          # the tag inside <!-- RC#... -->
-      log_page: reviews/comment-log.md # where `rc archive` moves resolved threads
+      log_page: reviews/comment-log.md # where `mkrc archive` moves resolved threads
       review: false                    # true renders threads in place
       api_url: http://127.0.0.1:8803   # where the page-side comment box posts
 ```
@@ -40,7 +40,7 @@ One comment per line, on its own line after the paragraph or table it refers to.
 - **Thread.** A root comment plus the comment lines directly beneath it: replies and the resolution line. A reply carries its own id and `re <id>`. `re` may point at a comment on another page, in which case the reply is a thread of its own with a link back.
 - **Resolve.** A line that reuses the root id with the word `resolved`. The thread stays in the page until it is archived.
 - **Names** may contain spaces. The text may not contain `|`, which separates the header from the text.
-- **Placement.** Never between two table rows. Inside an admonition, keep the indent. The page-side comment box and `rc` always place comments safely; these rules are for hand-written ones.
+- **Placement.** Never between two table rows. Inside an admonition, keep the indent. The page-side comment box and `mkrc` always place comments safely; these rules are for hand-written ones.
 
 ## Two builds
 
@@ -49,7 +49,7 @@ A normal build (`mkdocs build`, `mkdocs serve`) strips every tagged comment, so 
 A review build renders each thread in place as a note with an anchor (`#rc-DD-14`), so a comment has a URL and every `re` is a link, across pages and into the log once a thread is archived. Resolved threads render greyed. Review mode is on when any of these holds:
 
 - the plugin option `review: true`;
-- the environment variable `RC_REVIEW=1`, which `rc serve` sets;
+- the environment variable `RC_REVIEW=1`, which `mkrc serve` sets;
 - `extra.review_comments: true` in the config, convenient in an `INHERIT` file:
 
 ```yaml
@@ -64,35 +64,35 @@ The site name gains " (review build)" so the two are easy to tell apart.
 ## Commenting from the page
 
 ```
-rc serve
+mkrc serve
 ```
 
 serves the review build (default `127.0.0.1:8802`) and a small comment API (`8803`) in one process. Every heading gets a `+` button that adds a comment at the end of its section; every thread gets Reply and Resolve. Each save writes the tagged line into the markdown and the live reload rebuilds the page. Name and initials are remembered in the browser. Ctrl-C stops both.
 
-`rc serve` refuses to start if either port is already in use, naming the port, because Windows will otherwise let two copies bind the same port and answer at random.
+`mkrc serve` refuses to start if either port is already in use, naming the port, because Windows will otherwise let two copies bind the same port and answer at random.
 
-The comment API listens on the same interface as the site and the page is told where it is, so `rc serve -a 0.0.0.0:8802 --api-port 9000` lets a colleague on the network open `http://<your-ip>:8802/` and comment, with no change to `mkdocs.yml`. The `api_url` plugin option only matters when the review build is served by something other than `rc serve`.
+The comment API listens on the same interface as the site and the page is told where it is, so `mkrc serve -a 0.0.0.0:8802 --api-port 9000` lets a colleague on the network open `http://<your-ip>:8802/` and comment, with no change to `mkdocs.yml`. The `api_url` plugin option only matters when the review build is served by something other than `mkrc serve`.
 
 ## The command line
 
 ```
-rc list            # open threads by page
-rc list --all      # including resolved
-rc check           # duplicate ids, replies to unknown ids, comments that would break a table
-rc reply   DD-14 "text" --by "Mark Lazarides" --as ML
-rc resolve DD-14 "text" --by "Mark Lazarides"
-rc delete  DD-14   # remove a thread outright (junk or test comments)
-rc archive         # move resolved threads to the comment log page
-rc serve [-a IP:PORT] [--api-port N]
+mkrc list            # open threads by page
+mkrc list --all      # including resolved
+mkrc check           # duplicate ids, replies to unknown ids, comments that would break a table
+mkrc reply   DD-14 "text" --by "Mark Lazarides" --as ML
+mkrc resolve DD-14 "text" --by "Mark Lazarides"
+mkrc delete  DD-14   # remove a thread outright (junk or test comments)
+mkrc archive         # move resolved threads to the comment log page
+mkrc serve [-a IP:PORT] [--api-port N]
 ```
 
-`rc` reads `mkdocs.yml` in the current folder for the docs directory and the plugin options (`-f` for another config). With no MkDocs config at all, `--docs <folder>` scans a plain folder of markdown; the grammar and the CLI do not depend on MkDocs.
+`mkrc` reads `mkdocs.yml` in the current folder for the docs directory and the plugin options (`-f` for another config). With no MkDocs config at all, `--docs <folder>` scans a plain folder of markdown; the grammar and the CLI do not depend on MkDocs.
 
-`rc check` is cheap and worth running in CI.
+`mkrc check` is cheap and worth running in CI.
 
 ## Notes
 
-- With click 8.2, `mkdocs serve` silently loses its live-reload default and never rebuilds on file changes. `rc serve` forces it on. If you run `mkdocs serve` by hand, pass `--livereload`.
+- With click 8.2, `mkdocs serve` silently loses its live-reload default and never rebuilds on file changes. `mkrc serve` forces it on. If you run `mkdocs serve` by hand, pass `--livereload`.
 - The rendered notes use Material for MkDocs' CSS variables where present and plain colours otherwise, so other themes work, just less tidily. A review build enables the `attr_list` Markdown extension if the site does not already, since the rendered threads carry their class and anchor that way.
 - Python 3.10 or later.
 

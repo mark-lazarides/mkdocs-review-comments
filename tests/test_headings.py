@@ -18,7 +18,7 @@ PAGE = """\
 Setext One
 ==========
 
-## Using `rc check`
+## Using `mkrc check`
 
 ## A & B
 
@@ -64,7 +64,7 @@ def test_we_see_every_heading_the_renderer_sees():
     ours = g.headings(split_lines(PAGE))
     theirs = rendered_headings(PAGE)
     assert [(h.level, h.title) for h in ours] == [
-        (1, "Page title"), (1, "Setext One"), (2, "Using `rc check`"), (2, "A & B"), (2, "See [the spec](spec.md)"),
+        (1, "Page title"), (1, "Setext One"), (2, "Using `mkrc check`"), (2, "A & B"), (2, "See [the spec](spec.md)"),
         (2, "Dup"), (2, "Dup"), (2, "Closing hashes"), (2, "X"), (2, "Y"), (2, "Setext Two"), (3, "Deep"),
     ]
     assert len(ours) == len(theirs)

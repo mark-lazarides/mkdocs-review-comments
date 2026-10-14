@@ -1,10 +1,10 @@
 /* mkdocs-review-comments: comment buttons, inlined into review builds only.
-   Posts to the API run by `rc serve`, which writes the tagged comment line
+   Posts to the API run by `mkrc serve`, which writes the tagged comment line
    into the markdown source; the live reload then rebuilds the page. */
 (function () {
   var cfg = window.RC;
   if (!cfg || !cfg.page) return;
-  // `rc serve -a 0.0.0.0:8802` serves to the LAN; the API is on the same interface, so reach it
+  // `mkrc serve -a 0.0.0.0:8802` serves to the LAN; the API is on the same interface, so reach it
   // through whatever hostname this page was loaded from.
   cfg.api = (cfg.api || "").replace(/\/\/(0\.0\.0\.0|\[::\]|::)(?=[:\/]|$)/, "//" + location.hostname);
 
@@ -57,7 +57,7 @@
     }).then(function (r) {
       return r.json().then(function (j) { if (!r.ok) throw (j.error || r.status); return j; });
     }).catch(function (e) {
-      throw (e && e.message === "Failed to fetch") ? "comment API not running (start `rc serve`)" : e;
+      throw (e && e.message === "Failed to fetch") ? "comment API not running (start `mkrc serve`)" : e;
     });
   }
 

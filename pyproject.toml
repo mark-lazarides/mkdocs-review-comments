@@ -19,7 +19,7 @@ dependencies = [
 test = ["pytest>=7"]
 
 [project.scripts]
-rc = "mkdocs_review_comments.cli:main"
+mkrc = "mkdocs_review_comments.cli:main"
 
 [project.entry-points."mkdocs.plugins"]
 review-comments = "mkdocs_review_comments.plugin:ReviewCommentsPlugin"

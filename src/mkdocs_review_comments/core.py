@@ -13,7 +13,7 @@ One comment per line, on its own line after the paragraph or table it refers to:
   (replies and the resolution line).  A reply carries its own id and ``re <id>``;
   ``re`` may point at a comment on another page.
 * Resolving appends a line that reuses the root id with the word ``resolved``.
-  ``rc archive`` later moves resolved threads to the comment log page.
+  ``mkrc archive`` later moves resolved threads to the comment log page.
 * Author names may contain spaces.  The text may not contain ``|``.
 
 This module has no MkDocs dependency; the plugin and the CLI both build on it.

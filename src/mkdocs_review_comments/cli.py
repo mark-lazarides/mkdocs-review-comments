@@ -1,12 +1,12 @@
-"""``rc``: the command line for review comments kept in the markdown.
+"""``mkrc``: the command line for review comments kept in the markdown.
 
-    rc list [--all]
-    rc check
-    rc reply   <id> "text" --by "Mark Lazarides" --as ML
-    rc resolve <id> "text" --by "Mark Lazarides"
-    rc delete  <id>
-    rc archive
-    rc serve [-a 127.0.0.1:8802] [--api-port 8803]
+    mkrc list [--all]
+    mkrc check
+    mkrc reply   <id> "text" --by "Mark Lazarides" --as ML
+    mkrc resolve <id> "text" --by "Mark Lazarides"
+    mkrc delete  <id>
+    mkrc archive
+    mkrc serve [-a 127.0.0.1:8802] [--api-port 8803]
 
 The docs directory, tag and log page come from mkdocs.yml (``-f`` to point at
 another config).  Without a config, ``--docs`` names the folder to scan.
@@ -143,7 +143,7 @@ def cmd_archive(site: Site, args) -> None:
     else:
         site.log.parent.mkdir(parents=True, exist_ok=True)
         log_src = SourceFile(site.log, "")
-        log = ["# Comment Log", "", "Resolved review-comment threads, moved here from the pages by `rc archive`. Newest first.", ""]
+        log = ["# Comment Log", "", "Resolved review-comment threads, moved here from the pages by `mkrc archive`. Newest first.", ""]
     insert_at = len(log)
     for i, line in enumerate(log):  # after the intro paragraph: newest first
         if i > 0 and line.strip() == "" and not log[i - 1].startswith("#") and log[i - 1].strip():
@@ -176,7 +176,7 @@ def cmd_serve(site: Site, args) -> None:
 
 
 def main(argv: list[str] | None = None) -> None:
-    ap = argparse.ArgumentParser(prog="rc", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(prog="mkrc", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("-f", "--config-file", help="MkDocs config (default mkdocs.yml)")
     ap.add_argument("--docs", help="docs folder, when there is no MkDocs config")
     sub = ap.add_subparsers(dest="cmd", required=True)

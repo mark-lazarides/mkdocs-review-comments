@@ -1,6 +1,6 @@
 """Serve the review build and accept comments from it.
 
-``rc serve`` runs ``mkdocs serve`` in review mode in this process and a small
+``mkrc serve`` runs ``mkdocs serve`` in review mode in this process and a small
 JSON API beside it.  The buttons the plugin adds to the review build post here;
 each post writes one tagged comment line into the markdown source, and the
 MkDocs live reload rebuilds the page.
@@ -169,7 +169,7 @@ def serve(config_file: str | None, host: str, port: int, api_port: int, docs_dir
     # when SO_REUSEADDR is set, which both servers do, and the result is two sites on one URL.
     for p in (api_port, port):
         if _port_in_use(host, p):
-            sys.exit(f"port {p} is already in use: another `rc serve` or `mkdocs serve` is running. Stop it first.")
+            sys.exit(f"port {p} is already in use: another `mkrc serve` or `mkdocs serve` is running. Stop it first.")
 
     # The plugin reads both: review mode on, and where the page-side comment box should post.
     os.environ["RC_REVIEW"] = "1"
