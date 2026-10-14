@@ -178,15 +178,15 @@ def test_check_ignores_fenced_comments(g, tmp_path):
 def test_next_number_counts_archived_ids(g, tmp_path):
     (tmp_path / "reviews").mkdir()
     (tmp_path / "reviews" / "comment-log.md").write_text(
-        "# Log\n\n### ML-7 — [p.md](../p.md#h) { #ml-7 }\n\n- **ML-7 Mark 2026-01-01:** root\n- **DD-3 Josephine 2026-01-02** (re ML-7): reply\n",
+        "# Log\n\n### ML-7 — [p.md](../p.md#h) { #ml-7 }\n\n- **ML-7 Mark 2026-01-01:** root\n- **JB-3 Josephine 2026-01-02** (re ML-7): reply\n",
         encoding="utf-8",
     )
     (tmp_path / "p.md").write_text("# H\n\n<!-- RC#ML-2 Mark 2026-01-03 | live -->\n", encoding="utf-8")
     archived = g.archived_ids(tmp_path)
-    assert archived == {"ML-7", "DD-3"}
+    assert archived == {"ML-7", "JB-3"}
     threads = g.scan(tmp_path)
     assert next_number(threads, "ML", archived) == 8
-    assert next_number(threads, "DD", archived) == 4
+    assert next_number(threads, "JB", archived) == 4
     assert next_number(threads, "ML") == 3  # without the log, as before
 
 

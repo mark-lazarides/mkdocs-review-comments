@@ -2,9 +2,9 @@
 
 One comment per line, on its own line after the paragraph or table it refers to:
 
-    <!-- RC#DD-14 Josephine Bloggs 2026-10-14 | The figure came from the pump vendor. Cite the close-out. -->
-    <!-- RC#ML-7 Mark 2026-10-15 re DD-14 | Agreed. Cited Item 12 and raised TQ-061. -->
-    <!-- RC#DD-14 resolved Mark 2026-10-15 | fixed in TQ-061 -->
+    <!-- RC#JB-14 Josephine Bloggs 2026-10-14 | The figure came from the pump vendor. Cite the close-out. -->
+    <!-- RC#ML-7 Mark 2026-10-15 re JB-14 | Agreed. Cited Item 12 and raised TQ-061. -->
+    <!-- RC#JB-14 resolved Mark 2026-10-15 | fixed in TQ-061 -->
 
 * ``RC`` is the tag (configurable).  The id is the author's initials and the
   author's own running number, so two people commenting on separate branches

@@ -50,9 +50,9 @@ The comment box and the command line both write lines like these, one per line, 
 the paragraph or table they refer to:
 
 ```markdown
-<!-- RC#DD-2 Josephine Bloggs 2026-10-12 | Does Maintenance mode also inhibit the remote SCADA start? -->
-<!-- RC#ML-2 Mark Lazarides 2026-10-13 re DD-2 | It does. I will make it explicit in the table. -->
-<!-- RC#DD-2 resolved Josephine Bloggs 2026-10-14 | Rev C reads correctly. -->
+<!-- RC#JB-2 Josephine Bloggs 2026-10-12 | Does Maintenance mode also inhibit the remote SCADA start? -->
+<!-- RC#ML-2 Mark Lazarides 2026-10-13 re JB-2 | It does. I will make it explicit in the table. -->
+<!-- RC#JB-2 resolved Josephine Bloggs 2026-10-14 | Rev C reads correctly. -->
 ```
 
 - **Id.** The author's initials and the author's own running number (`ML-2`). Two people
@@ -96,7 +96,7 @@ Options, all optional:
 A normal build (`mkdocs build`, `mkdocs serve`) strips every tagged comment, so the issued site
 carries nothing.
 
-A review build renders each thread in place with an anchor (`#rc-DD-2`), so a comment has a URL
+A review build renders each thread in place with an anchor (`#rc-JB-2`), so a comment has a URL
 and every `re` is a link, across pages and into the log once a thread is archived. Review mode is
 on when any of these holds:
 

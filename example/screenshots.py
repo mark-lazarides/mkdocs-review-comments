@@ -66,10 +66,10 @@ def main() -> None:
             page.wait_for_selector(".rc-thread")
 
             # 1. An open thread with a reply, rendered in place under the table it refers to.
-            page.screenshot(path=OUT / "thread.png", clip=clip_between(page, "#operating-modes", "#rc-DD-2 .rc-actions"))
+            page.screenshot(path=OUT / "thread.png", clip=clip_between(page, "#operating-modes", "#rc-JB-2 .rc-actions"))
 
             # 2. A resolved thread renders greyed out and keeps only the Reply button.
-            page.screenshot(path=OUT / "resolved.png", clip=clip_between(page, "#scope", "#rc-DD-1 .rc-actions"))
+            page.screenshot(path=OUT / "resolved.png", clip=clip_between(page, "#scope", "#rc-JB-1 .rc-actions"))
 
             # 3. Hovering a heading lights up its + button. Measure first: the helper scrolls, which would end the hover.
             clip = clip_between(page, "#alarms", "#alarms", pad=24)
@@ -83,7 +83,7 @@ def main() -> None:
             page.evaluate("window.scrollBy(0, -100)")
             page.locator("#alarms .rc-btn").click()
             page.fill(".rc-panel .rc-author", "Josephine Bloggs")
-            page.fill(".rc-panel .rc-initials", "DD")
+            page.fill(".rc-panel .rc-initials", "JB")
             page.fill(".rc-panel .rc-text", "Runtime-exceeded should be Medium, not Low: it is how we catch a stuck duty pump.")
             page.wait_for_timeout(200)
             page.screenshot(path=OUT / "comment-box.png")
