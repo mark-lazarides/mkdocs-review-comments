@@ -20,7 +20,7 @@ import os
 import sys
 from pathlib import Path
 
-from .core import DEFAULT_LOG_PAGE, DEFAULT_TAG, Comment, Grammar, SourceFile, Thread, clean_text, index_by_id, next_number
+from .core import DEFAULT_LOG_PAGE, DEFAULT_TAG, Comment, Grammar, SourceFile, Thread, clean_text, index_by_id, next_number, split_lines
 
 
 class Site:
@@ -138,7 +138,7 @@ def cmd_archive(site: Site, args) -> None:
         return
     if site.log.exists():
         log_src = SourceFile.read(site.log)
-        log = log_src.text.rstrip("\n").splitlines()
+        log = split_lines(log_src.text.rstrip("\n"))
     else:
         site.log.parent.mkdir(parents=True, exist_ok=True)
         log_src = SourceFile(site.log, "")

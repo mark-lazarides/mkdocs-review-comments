@@ -188,3 +188,10 @@ def test_next_number_counts_archived_ids(g, tmp_path):
     assert next_number(threads, "ML", archived) == 8
     assert next_number(threads, "DD", archived) == 4
     assert next_number(threads, "ML") == 3  # without the log, as before
+
+
+def test_unusual_separators_are_not_line_breaks(g):
+    text = "# H\n\npara with form feed \x0c and U+2028\u2028 inside\n"
+    out = g.insert_root(text, "h", NEW)
+    assert out == text + "\n" + NEW + "\n"
+    assert [t.first_line for t in g.parse_page("p.md", out)] == [5]

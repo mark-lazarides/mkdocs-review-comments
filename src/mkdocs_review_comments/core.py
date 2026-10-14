@@ -144,6 +144,15 @@ def read_text(path: Path) -> str:
     return SourceFile.read(path).text
 
 
+def split_lines(text: str) -> list[str]:
+    """Split on newlines only. ``str.splitlines`` also splits on form feeds, U+2028 and the like,
+    which would turn one source line into several and rewrite the page on the next save."""
+    lines = text.split("\n")
+    if lines and lines[-1] == "":
+        lines.pop()
+    return lines
+
+
 class Grammar:
     """The tag and page conventions, shared by the plugin and the CLI."""
 
@@ -183,7 +192,7 @@ class Grammar:
         threads: list[Thread] = []
         heading, anchor = "", ""
         current: Thread | None = None
-        lines = text.splitlines()
+        lines = split_lines(text)
         skip = protected_lines(lines)
         for i, raw in enumerate(lines, start=1):
             if skip[i - 1]:
@@ -222,7 +231,7 @@ class Grammar:
         if not log.exists():
             return set()
         entry = re.compile(rf"^(?:###\s+|-\s+\*\*)(?P<id>{ID_RE})\s")
-        return {m["id"] for line in read_text(log).splitlines() if (m := entry.match(line))}
+        return {m["id"] for line in split_lines(read_text(log)) if (m := entry.match(line))}
 
     # -- writing ---------------------------------------------------------
 
@@ -242,7 +251,7 @@ class Grammar:
         horizontal rule, separated by a blank line so it can never land inside a table
         or a list.  An empty anchor means the top of the page, before the first heading.
         """
-        lines = page_text.splitlines()
+        lines = split_lines(page_text)
         skip = protected_lines(lines)
         start = None  # index of the heading line, or of the last front-matter line, or -1 for the page top
         if anchor == "":
@@ -274,13 +283,13 @@ class Grammar:
 
     @staticmethod
     def append_to_thread(page_text: str, thread: Thread, line: str) -> str:
-        lines = page_text.splitlines()
+        lines = split_lines(page_text)
         lines.insert(thread.last_line, line)  # last_line is 1-based: insert after it
         return "\n".join(lines) + "\n"
 
     @staticmethod
     def delete_thread(page_text: str, thread: Thread) -> str:
-        lines = page_text.splitlines()
+        lines = split_lines(page_text)
         del lines[thread.first_line - 1 : thread.last_line]
         return "\n".join(lines) + "\n"
 
@@ -305,7 +314,7 @@ class Grammar:
                     problems.append(f"{where}: reply to unknown id {c.re}")
         for path in sorted(docs_dir.rglob("*.md")):
             rel = path.relative_to(docs_dir).as_posix()
-            lines = read_text(path).splitlines()
+            lines = split_lines(read_text(path))
             skip = protected_lines(lines)
             for i, raw in enumerate(lines):
                 if skip[i]:

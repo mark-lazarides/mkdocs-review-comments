@@ -24,7 +24,7 @@ from mkdocs.config import config_options as c
 from mkdocs.config.base import Config
 from mkdocs.plugins import BasePlugin
 
-from .core import DEFAULT_LOG_PAGE, DEFAULT_TAG, Grammar, Thread, default_slugify, index_by_id
+from .core import DEFAULT_LOG_PAGE, DEFAULT_TAG, Grammar, Thread, default_slugify, index_by_id, split_lines
 
 ASSETS = Path(__file__).resolve().with_name("assets")
 
@@ -80,7 +80,7 @@ class ReviewCommentsPlugin(BasePlugin[ReviewCommentsConfig]):
         threads = self.grammar.parse_page(src, markdown)
         if not threads:
             return markdown
-        lines = markdown.splitlines()
+        lines = split_lines(markdown)
         for t in sorted(threads, key=lambda t: t.first_line, reverse=True):
             start, end = t.first_line - 1, t.last_line
             if self.review:
