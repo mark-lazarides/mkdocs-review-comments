@@ -66,7 +66,8 @@ def cmd_list(site: Site, args) -> None:
         if t.is_resolved and not args.all:
             continue
         state = "resolved" if t.is_resolved else "open"
-        print(f"{t.id}  [{state}]  {t.page}#{t.anchor}  ({t.heading})")
+        where = f"{t.page}#{t.anchor}  ({t.heading})" if t.anchor else f"{t.page}  (top of page)"
+        print(f"{t.id}  [{state}]  {where}")
         for c in t.lines:
             tag = "resolved by" if c.resolved else ("reply" if c.is_reply else "")
             ref = f" re {c.re}" if c.re else ""
