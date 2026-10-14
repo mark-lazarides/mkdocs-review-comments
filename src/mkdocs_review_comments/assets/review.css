@@ -1,0 +1,55 @@
+/* mkdocs-review-comments: inlined into review builds only. Uses Material's
+   variables where present, with plain fallbacks for other themes. */
+.rc-thread {
+  border-left: 0.25rem solid #f9a825;
+  background: rgba(249, 168, 37, 0.10);
+  padding: 0.4rem 0.8rem;
+  margin: 0.6rem 0 1rem;
+  font-size: 0.85em;
+}
+.rc-thread.rc-resolved {
+  border-left-color: var(--md-default-fg-color--lighter, #999);
+  background: var(--md-code-bg-color, rgba(128, 128, 128, 0.12));
+  opacity: 0.7;
+}
+.rc-thread .rc-line { margin: 0.2rem 0; }
+.rc-thread .rc-reply { margin-left: 1.2rem; }
+.rc-thread .rc-res { margin-left: 1.2rem; font-style: italic; }
+.rc-thread .rc-id {
+  font-family: var(--md-code-font-family, monospace);
+  font-size: 0.85em;
+  color: var(--md-default-fg-color--light, #666);
+  margin-right: 0.3em;
+}
+.rc-thread:target { outline: 2px solid #f9a825; }
+
+.rc-btn {
+  font: inherit; font-size: 0.7em; line-height: 1;
+  margin-left: 0.5em; padding: 0.15em 0.5em;
+  border: 1px solid #f9a825; border-radius: 0.2em;
+  background: transparent; color: #f9a825; cursor: pointer; vertical-align: middle;
+}
+.rc-btn:hover { background: #f9a825; color: #000; }
+h1 .rc-btn, h2 .rc-btn, h3 .rc-btn, h4 .rc-btn, h5 .rc-btn, h6 .rc-btn { opacity: 0.35; }
+h1:hover .rc-btn, h2:hover .rc-btn, h3:hover .rc-btn, h4:hover .rc-btn, h5:hover .rc-btn, h6:hover .rc-btn { opacity: 1; }
+.rc-actions { margin-top: 0.3rem; }
+.rc-panel {
+  position: fixed; right: 1rem; bottom: 1rem; z-index: 50; width: min(34rem, calc(100vw - 2rem));
+  background: var(--md-default-bg-color, #fff); color: var(--md-default-fg-color, #222);
+  border: 1px solid #f9a825; border-radius: 0.3rem; box-shadow: 0 0.4rem 1.2rem rgba(0,0,0,0.35);
+  padding: 0.8rem; font-size: 0.8rem;
+}
+.rc-panel-title { font-weight: 600; margin-bottom: 0.5rem; }
+.rc-panel-row { display: flex; gap: 0.5rem; align-items: center; margin: 0.4rem 0; }
+.rc-panel input, .rc-panel textarea {
+  font: inherit; width: 100%; box-sizing: border-box; padding: 0.3rem 0.5rem;
+  background: var(--md-code-bg-color, #f4f4f4); color: inherit;
+  border: 1px solid var(--md-default-fg-color--lighter, #bbb); border-radius: 0.2rem;
+}
+.rc-panel .rc-initials { width: 6rem; text-transform: uppercase; }
+.rc-panel button.rc-send, .rc-panel button.rc-cancel {
+  font: inherit; font-size: 0.75rem; padding: 0.3rem 0.9rem; border-radius: 0.2rem; cursor: pointer;
+  border: 1px solid #f9a825; background: transparent; color: inherit;
+}
+.rc-panel button.rc-send { background: #f9a825; color: #000; }
+.rc-status { color: var(--md-default-fg-color--light, #666); }
